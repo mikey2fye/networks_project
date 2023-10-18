@@ -1,4 +1,7 @@
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 from scapy.all import IP, UDP, sr1
+import dns
 import json
 import sys
 import subprocess
@@ -57,25 +60,27 @@ def multi_traceroute(first_destination, max_hops, count):
 
             print(f"Serializing {node}")
 
-            if node[:3] == "10.":
+            if node.startswith("10."):
                 ip_node = {
                     "ip": node,
-                    "links": [],
+                    "links": set(),
                 }
 
-                if i-1 >= 0 and output[i-1] not in ip_node["links"]:
-                    ip_node["links"].append(output[i-1])
+                if i != 0 and output[i-1].startswith("10."):
+                    ip_node["links"].add(output[i-1])
 
-                if i+1 <= len(output) - 1 and output[i+1] not in ip_node["links"]:
-                    ip_node["links"].append(output[i+1])
+                if i != len(output) - 1 and output[i+1].startswith("10."):
+                    ip_node["links"].add(output[i+1])
 
-        with open('database.json', 'r') as file:
-            data = json.load(file)
+                ip_node["links"] = list(ip_node["links"])
 
-        data["ip_nodes"].append(ip_node)
+                with open('database.json', 'r') as file:
+                    data = json.load(file)
 
-        with open('database.json', 'w') as file:
-            json.dump(data, file, indent=4)
+                data["ip_nodes"].append(ip_node)
+
+                with open('database.json', 'w') as file:
+                    json.dump(data, file, indent=4)
 
         ip_split = [int(x) for x in ip.split('.')]
 
@@ -95,6 +100,19 @@ def multi_traceroute(first_destination, max_hops, count):
 
 
 if __name__ == '__main__':
+    """ Set Up MongoDB Client """
+    uri = "mongodb+srv://canicolas:q9shvkhrAUDvEV2K@cluster0.8gcptj9.mongodb.net/?retryWrites=true&w=majority"
+
+    # Create a new client and connect to the server
+    client = MongoClient(uri, server_api=ServerApi('1'))
+
+    # Send a ping to confirm a successful connection
+    try:
+        client.admin.command('ping')
+        print("Pinged your deployment. You successfully connected to MongoDB!")
+    except Exception as e:
+        print(e)
+
     # if len(sys.argv) != 3:
     #     print("Usage: python udp_traceroute.py <destination>")
     #     sys.exit(1)
