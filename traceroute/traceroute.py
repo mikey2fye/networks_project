@@ -101,11 +101,11 @@ def multi_traceroute(first_destination, max_hops, count):
 
 if __name__ == '__main__':
     """ Set Up MongoDB Client """
-    uri = "mongodb+srv://canicolas:q9shvkhrAUDvEV2K@cluster0.8gcptj9.mongodb.net/?retryWrites=true&w=majority"
-
+    db_username = "canicolas"
+    db_password = "BlRvmec6R0JzqXM3"
+    uri = f"mongodb+srv://{db_username}:{db_password}@cluster0.8gcptj9.mongodb.net/?retryWrites=true&w=majority"
     # Create a new client and connect to the server
     client = MongoClient(uri, server_api=ServerApi('1'))
-
     # Send a ping to confirm a successful connection
     try:
         client.admin.command('ping')
