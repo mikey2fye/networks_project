@@ -1,6 +1,7 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from scapy.all import IP, UDP, sr1
+from time import sleep
 import threading
 import sys
 import pprint
@@ -50,18 +51,21 @@ def increase_ip(ip, dif, increments=1):
     ip_total = ip[3] + ip[2] * 255 + ip[1] * (255 ** 2)
 
     for i in range(increments):
-        ip_total += dif
+        ip[3] += dif
 
-
-    ip[2] = ip_total // 256
-    ip[1] = ip[2] // 256
-    ip[3] = ip_total % 256
-
-    new_ip = [str(x) for x in ip]
-
-    new_ip = '.'.join(new_ip)
+        if ip[3] >= 256:
+            ip[2] += 1
+            ip[3] = ip[3] % 256
         
-    return new_ip
+        if ip[2] == 256:
+            ip[1] += 1
+            ip[2] = 0
+
+    ip = [str(x) for x in ip]
+
+    ip = '.'.join(ip)
+        
+    return ip
 
 def multi_traceroute(first_destination, max_hops, count, nodes):
 
@@ -160,62 +164,22 @@ if __name__ == '__main__':
     threads = []
 
     # Define the number of threads you want to create
-    num_threads = 200
+    num_threads = 100
 
     # Create and start the threads
     first_destination = destination
 
     for i in range(num_threads):
-        thread = threading.Thread(target=multi_traceroute, args=(first_destination, 13, 10, nodes))
+        thread = threading.Thread(target=multi_traceroute, args=(first_destination, 13, 5242, nodes))
         threads.append(thread)
         thread.start()
         print(f"Starting thread from: {first_destination}")
 
-        first_destination = increase_ip(ip=first_destination, dif=8, increments=10)
+        # sleep(0.001)
+        first_destination = increase_ip(ip=first_destination, dif=8, increments=5242)
 
     # Wait for all threads to complete
     for thread in threads:
         thread.join()
 
     print("All threads have finished")
-
-    # thread1 = threading.Thread(target=multi_traceroute, args=("10.0.0.0", 10, 10, nodes))
-    # threads.append(thread1)
-    # thread1.start()
-
-    # thread2 = threading.Thread(target=multi_traceroute, args=("10.0.0.80", 10, 10, nodes))
-    # threads.append(thread2)
-    # thread2.start()
-
-    # thread3 = threading.Thread(target=multi_traceroute, args=("10.0.0.160", 10, 10, nodes))
-    # threads.append(thread3)
-    # thread3.start()
-
-    # thread4 = threading.Thread(target=multi_traceroute, args=("10.0.0.240", 10, 10, nodes))
-    # threads.append(thread4)
-    # thread4.start()
-
-    # thread5 = threading.Thread(target=multi_traceroute, args=("10.0.1.70", 10, 10, nodes))
-    # threads.append(thread5)
-    # thread5.start()
-
-    # thread6 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    # threads.append(thread6)
-    # thread6.start()
-
-    # thread7 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    # threads.append(thread7)
-    # thread7.start()
-
-    # thread8 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    # threads.append(thread8)
-    # thread8.start()
-
-    # thread9 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    # threads.append(thread9)
-    # thread9.start()
-
-    # thread0 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    # threads.append(thread0)
-    # thread0.start()
-
