@@ -1,10 +1,8 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from scapy.all import IP, UDP, sr1
-import dns
-import json
+import threading
 import sys
-import subprocess
 import pprint
 
 """ Shell Command Traceroute Implementation """
@@ -36,33 +34,32 @@ def traceroute(destination, max_hops=30, dst_port=33434):
 
         if reply is not None and reply.src == destination:
             print(f"Reached destination: {destination}")
-            break
+            return output
 
+    # print(f"Destination unreachable within {max_hops} hops: {destination}") 
     return output
 
 def ip_is_valid(ip):
-    return ip.startswith(("10.", "138.238."))
+    return ip.startswith(("10.", "138.238.", "172."))
 
-def multi_traceroute(first_destination, max_hops, count):
-
-    client = mongo_client()
-    db = client.IP_Database
-    nodes = db.IP_Nodes
+def multi_traceroute(first_destination, max_hops, count, nodes):
 
     ip = first_destination
 
     for i in range(count):
-        print(ip)
+        # print(ip)
         output = traceroute(ip, max_hops)
-        print(output)
+        # print(output)
 
         for i, node in enumerate(output):
 
-            node_id = nodes.find_one({"ip": ip_node["ip"]})
+            node_id = nodes.find_one({"ip": node})
             if node_id is not None:
+                # print(f"Node already exists in database: {node}")
+
                 filter = {"ip": node}
 
-                new_links = {}
+                new_links = set()
 
                 if i != 0 and ip_is_valid(output[i-1]):
                     new_links.add(output[i-1])
@@ -78,6 +75,7 @@ def multi_traceroute(first_destination, max_hops, count):
                     }
                 }
 
+                # print(f"Updating entry")
                 nodes.update_one(filter, update_data)
 
             elif ip_is_valid(node):
@@ -146,13 +144,67 @@ if __name__ == '__main__':
     destination = sys.argv[1]
     # max_hops = int(sys.argv[2])
     # count = int(sys.argv[3])
-    # traceroute(destination, max_hops)
 
-    multi_traceroute(destination, max_hops=30, count=1)
+    client = mongo_client()
+    db = client.IP_Database
+    nodes = db.IP_Nodes
 
-    # client = mongo_client()
-    # db = client.IP_Database
-    # nodes = db.IP_Nodes
+    # Define the number of threads you want to create
+    num_threads = 10
 
-    # node_id = '6535e158f47b5684832cb66a'
-    # pprint.pprint(nodes.find_one({"ip": "172.26.80.1"}))
+    # Create a list to hold the thread objects
+    threads = []
+
+    thread1 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    threads.append(thread1)
+    thread1.start()
+
+    thread2 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    threads.append(thread2)
+    thread2.start()
+
+    thread3 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    threads.append(thread3)
+    thread3.start()
+
+    thread4 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    threads.append(thread4)
+    thread4.start()
+
+    thread5 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    threads.append(thread5)
+    thread5.start()
+
+    thread6 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    threads.append(thread6)
+    thread6.start()
+
+    thread7 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    threads.append(thread7)
+    thread7.start()
+
+    thread8 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    threads.append(thread8)
+    thread8.start()
+
+    thread9 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    threads.append(thread9)
+    thread9.start()
+
+    thread0 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    threads.append(thread0)
+    thread0.start()
+
+
+    # Create and start the threads
+    # for i in range(num_threads):
+    #     thread = threading.Thread(target=multi_traceroute, args=(destination, 30, 1, nodes))
+    #     threads.append(thread)
+    #     thread.start()
+
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+
+    print("All threads have finished")
+
