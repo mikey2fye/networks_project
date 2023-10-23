@@ -1,3 +1,5 @@
 # Auto generated .vscode files
 .vscode
 traceroute/database.json
+
+env
