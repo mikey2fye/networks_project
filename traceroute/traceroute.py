@@ -1,7 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from scapy.all import IP, UDP, sr1
 from time import sleep
+from tqdm import tqdm
 import threading
 import sys
 import pprint
@@ -37,7 +39,7 @@ def traceroute(destination, max_hops=30, dst_port=33434):
             print(f"Reached destination: {destination}")
             return output
 
-    print(f"Destination unreachable within {max_hops} hops: {destination}") 
+    # print(f"Destination unreachable within {max_hops} hops: {destination}") 
     return output
 
 def ip_is_valid(ip):
@@ -71,7 +73,7 @@ def multi_traceroute(first_destination, max_hops, count, nodes):
 
     ip = first_destination
 
-    for i in range(count):
+    for i in tqdm(range(count), desc="Processing", unit="traceroute", bar_format="{l_bar}\033[34m{bar}\033[0m|{n_fmt}/{total}"):
         # print(ip)
         output = traceroute(ip, max_hops)
         # print(output)
@@ -125,7 +127,6 @@ def multi_traceroute(first_destination, max_hops, count, nodes):
         # Increment IP Address
         ip = increase_ip(ip, 8)
 
-
 def mongo_client():
     """ Set Up MongoDB Client """
 
@@ -160,26 +161,27 @@ if __name__ == '__main__':
     db = client.IP_Database
     nodes = db.IP_Nodes
 
-    # Create a list to hold the thread objects
-    threads = []
-
     # Define the number of threads you want to create
-    num_threads = 100
+    num_threads = range(100)
 
     # Create and start the threads
     first_destination = destination
 
-    for i in range(num_threads):
-        thread = threading.Thread(target=multi_traceroute, args=(first_destination, 13, 5242, nodes))
-        threads.append(thread)
-        thread.start()
-        print(f"Starting thread from: {first_destination}")
+    max_threads = 20  # Adjust as needed
+    with ThreadPoolExecutor(max_threads) as executor:
+        # Create a list to hold the thread objects
+        threads = []
 
-        # sleep(0.001)
+        for i in tqdm(num_threads, desc="Initializing threads", unit="thread", bar_format="{l_bar}\033[32m{bar}\033[0m|{n_fmt}/{total}"):
+
+            thread = executor.submit(multi_traceroute, first_destination, 13, 5242, nodes)
+            threads.append(thread)
+            # print(f"Starting thread from: {first_destination}")
+
         first_destination = increase_ip(ip=first_destination, dif=8, increments=5242)
 
-    # Wait for all threads to complete
-    for thread in threads:
-        thread.join()
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.result()
 
     print("All threads have finished")
