@@ -1,5 +1,3 @@
 # Auto generated .vscode files
 .vscode
-
-# Ignore ip_addresses list
-traceroute/ip_addressess.txt
+traceroute/database.json
