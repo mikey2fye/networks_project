@@ -36,11 +36,32 @@ def traceroute(destination, max_hops=30, dst_port=33434):
             print(f"Reached destination: {destination}")
             return output
 
-    # print(f"Destination unreachable within {max_hops} hops: {destination}") 
+    print(f"Destination unreachable within {max_hops} hops: {destination}") 
     return output
 
 def ip_is_valid(ip):
-    return ip.startswith(("10.", "138.238.", "172."))
+    return ip.startswith(("10.", "138.238."))
+
+def increase_ip(ip, dif, increments=1):
+    # Increment IP Address by dif
+
+    ip = [int(x) for x in ip.split('.')]
+
+    ip_total = ip[3] + ip[2] * 255 + ip[1] * (255 ** 2)
+
+    for i in range(increments):
+        ip_total += dif
+
+
+    ip[2] = ip_total // 256
+    ip[1] = ip[2] // 256
+    ip[3] = ip_total % 256
+
+    new_ip = [str(x) for x in ip]
+
+    new_ip = '.'.join(new_ip)
+        
+    return new_ip
 
 def multi_traceroute(first_destination, max_hops, count, nodes):
 
@@ -68,7 +89,7 @@ def multi_traceroute(first_destination, max_hops, count, nodes):
                     new_links.add(output[i+1])
 
                 update_data = {
-                    "$push": {
+                    "$addToSet": {
                         "links": {
                             "$each": list(new_links)
                         }
@@ -98,21 +119,7 @@ def multi_traceroute(first_destination, max_hops, count, nodes):
 
 
         # Increment IP Address
-        ip_split = [int(x) for x in ip.split('.')]
-
-        ip_split[3] += 8
-
-        if ip_split[3] >= 256:
-            ip_split[3] = 0
-            ip_split[2] += 1
-
-        if ip_split[2] >= 256:
-            ip_split[2] = 0
-            ip_split[1] += 1
-
-        ip_split = [str(x) for x in ip_split]
-
-        ip = '.'.join(ip_split)
+        ip = increase_ip(ip, 8)
 
 
 def mongo_client():
@@ -149,62 +156,66 @@ if __name__ == '__main__':
     db = client.IP_Database
     nodes = db.IP_Nodes
 
-    # Define the number of threads you want to create
-    num_threads = 10
-
     # Create a list to hold the thread objects
     threads = []
 
-    thread1 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    threads.append(thread1)
-    thread1.start()
-
-    thread2 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    threads.append(thread2)
-    thread2.start()
-
-    thread3 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    threads.append(thread3)
-    thread3.start()
-
-    thread4 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    threads.append(thread4)
-    thread4.start()
-
-    thread5 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    threads.append(thread5)
-    thread5.start()
-
-    thread6 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    threads.append(thread6)
-    thread6.start()
-
-    thread7 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    threads.append(thread7)
-    thread7.start()
-
-    thread8 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    threads.append(thread8)
-    thread8.start()
-
-    thread9 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    threads.append(thread9)
-    thread9.start()
-
-    thread0 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
-    threads.append(thread0)
-    thread0.start()
-
+    # Define the number of threads you want to create
+    num_threads = 200
 
     # Create and start the threads
-    # for i in range(num_threads):
-    #     thread = threading.Thread(target=multi_traceroute, args=(destination, 30, 1, nodes))
-    #     threads.append(thread)
-    #     thread.start()
+    first_destination = destination
+
+    for i in range(num_threads):
+        thread = threading.Thread(target=multi_traceroute, args=(first_destination, 13, 10, nodes))
+        threads.append(thread)
+        thread.start()
+        print(f"Starting thread from: {first_destination}")
+
+        first_destination = increase_ip(ip=first_destination, dif=8, increments=10)
 
     # Wait for all threads to complete
     for thread in threads:
         thread.join()
 
     print("All threads have finished")
+
+    # thread1 = threading.Thread(target=multi_traceroute, args=("10.0.0.0", 10, 10, nodes))
+    # threads.append(thread1)
+    # thread1.start()
+
+    # thread2 = threading.Thread(target=multi_traceroute, args=("10.0.0.80", 10, 10, nodes))
+    # threads.append(thread2)
+    # thread2.start()
+
+    # thread3 = threading.Thread(target=multi_traceroute, args=("10.0.0.160", 10, 10, nodes))
+    # threads.append(thread3)
+    # thread3.start()
+
+    # thread4 = threading.Thread(target=multi_traceroute, args=("10.0.0.240", 10, 10, nodes))
+    # threads.append(thread4)
+    # thread4.start()
+
+    # thread5 = threading.Thread(target=multi_traceroute, args=("10.0.1.70", 10, 10, nodes))
+    # threads.append(thread5)
+    # thread5.start()
+
+    # thread6 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    # threads.append(thread6)
+    # thread6.start()
+
+    # thread7 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    # threads.append(thread7)
+    # thread7.start()
+
+    # thread8 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    # threads.append(thread8)
+    # thread8.start()
+
+    # thread9 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    # threads.append(thread9)
+    # thread9.start()
+
+    # thread0 = threading.Thread(target=multi_traceroute, args=("8.8.8.8", 10, 10, nodes))
+    # threads.append(thread0)
+    # thread0.start()
 
