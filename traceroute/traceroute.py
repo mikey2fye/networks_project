@@ -5,6 +5,7 @@ import dns
 import json
 import sys
 import subprocess
+import pprint
 
 """ Shell Command Traceroute Implementation """
 
@@ -39,58 +40,75 @@ def traceroute(destination, max_hops=30, dst_port=33434):
 
     return output
 
-
-# Example hop
-hop = {
-    'ip': '192.168.1.1',
-    'links': {'172.26.80.1', '71.178.216.1'}
-}
-
+def ip_is_valid(ip):
+    return ip.startswith(("10.", "138.238."))
 
 def multi_traceroute(first_destination, max_hops, count):
 
+    client = mongo_client()
+    db = client.IP_Database
+    nodes = db.IP_Nodes
+
     ip = first_destination
+
     for i in range(count):
         print(ip)
         output = traceroute(ip, max_hops)
         print(output)
 
-        for i in range(len(output)):
-            node = output[i]
+        for i, node in enumerate(output):
 
-            print(f"Serializing {node}")
+            node_id = nodes.find_one({"ip": ip_node["ip"]})
+            if node_id is not None:
+                filter = {"ip": node}
 
-            if node.startswith("10."):
+                new_links = {}
+
+                if i != 0 and ip_is_valid(output[i-1]):
+                    new_links.add(output[i-1])
+
+                if i != len(output) - 1 and ip_is_valid(output[i+1]):
+                    new_links.add(output[i+1])
+
+                update_data = {
+                    "$push": {
+                        "links": {
+                            "$each": list(new_links)
+                        }
+                    }
+                }
+
+                nodes.update_one(filter, update_data)
+
+            elif ip_is_valid(node):
+
                 ip_node = {
                     "ip": node,
                     "links": set(),
                 }
 
-                if i != 0 and output[i-1].startswith("10."):
+                if i != 0 and ip_is_valid(output[i-1]):
                     ip_node["links"].add(output[i-1])
 
-                if i != len(output) - 1 and output[i+1].startswith("10."):
+                if i != len(output) - 1 and ip_is_valid(output[i+1]):
                     ip_node["links"].add(output[i+1])
 
                 ip_node["links"] = list(ip_node["links"])
 
-                with open('database.json', 'r') as file:
-                    data = json.load(file)
+                node_id = nodes.insert_one(ip_node).inserted_id
+        
 
-                data["ip_nodes"].append(ip_node)
 
-                with open('database.json', 'w') as file:
-                    json.dump(data, file, indent=4)
-
+        # Increment IP Address
         ip_split = [int(x) for x in ip.split('.')]
 
-        ip_split[3] += 1
+        ip_split[3] += 8
 
-        if ip_split[3] == 256:
+        if ip_split[3] >= 256:
             ip_split[3] = 0
             ip_split[2] += 1
 
-        if ip_split[2] == 256:
+        if ip_split[2] >= 256:
             ip_split[2] = 0
             ip_split[1] += 1
 
@@ -99,19 +117,27 @@ def multi_traceroute(first_destination, max_hops, count):
         ip = '.'.join(ip_split)
 
 
-if __name__ == '__main__':
+def mongo_client():
     """ Set Up MongoDB Client """
+
     db_username = "canicolas"
     db_password = "BlRvmec6R0JzqXM3"
     uri = f"mongodb+srv://{db_username}:{db_password}@cluster0.8gcptj9.mongodb.net/?retryWrites=true&w=majority"
+
     # Create a new client and connect to the server
     client = MongoClient(uri, server_api=ServerApi('1'))
+
     # Send a ping to confirm a successful connection
     try:
         client.admin.command('ping')
         print("Pinged your deployment. You successfully connected to MongoDB!")
     except Exception as e:
         print(e)
+
+    return client
+
+
+if __name__ == '__main__':
 
     # if len(sys.argv) != 3:
     #     print("Usage: python udp_traceroute.py <destination>")
@@ -122,4 +148,11 @@ if __name__ == '__main__':
     # count = int(sys.argv[3])
     # traceroute(destination, max_hops)
 
-    multi_traceroute(destination, 8, 1)
+    multi_traceroute(destination, max_hops=30, count=1)
+
+    # client = mongo_client()
+    # db = client.IP_Database
+    # nodes = db.IP_Nodes
+
+    # node_id = '6535e158f47b5684832cb66a'
+    # pprint.pprint(nodes.find_one({"ip": "172.26.80.1"}))
