@@ -173,7 +173,7 @@ if __name__ == '__main__':
 
         for i in tqdm(num_threads, desc="Initializing threads", unit="thread", bar_format="{l_bar}\033[32m{bar}\033[0m|{n_fmt}/{total}"):
 
-            thread = executor.submit(multi_traceroute, first_destination, 13, 328, nodes)
+            thread = executor.submit(multi_traceroute, first_destination, 10, 328, nodes)
             threads.append(thread)
             # print(f"Starting thread from: {first_destination}")
 
