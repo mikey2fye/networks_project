@@ -72,7 +72,7 @@ def multi_traceroute(first_destination, max_hops, count, nodes):
 
     ip = first_destination
 
-    for i in tqdm(range(count), desc="Processing", unit="traceroute", bar_format="{l_bar}\033[34m{bar}\033[0m|{n_fmt}/{total}"):
+    for i in tqdm(range(count), desc=f"{first_destination}", unit="traceroute", bar_format="{l_bar}\033[34m{bar}\033[0m|{n_fmt}/{total}"):
         # print(ip)
         output = traceroute(ip, max_hops)
         # print(output)
@@ -177,7 +177,7 @@ if __name__ == '__main__':
             threads.append(thread)
             # print(f"Starting thread from: {first_destination}")
 
-        first_destination = increase_ip(ip=first_destination, dif=8, increments=328)
+            first_destination = increase_ip(ip=first_destination, dif=8, increments=328)
 
         # Wait for all threads to complete
         for thread in threads:
