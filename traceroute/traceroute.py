@@ -2,7 +2,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from scapy.all import IP, UDP, sr1
-from time import sleep
 from tqdm import tqdm
 import threading
 import sys
@@ -43,7 +42,7 @@ def traceroute(destination, max_hops=30, dst_port=33434):
     return output
 
 def ip_is_valid(ip):
-    return ip.startswith(("10.", "138.238."))
+    return ip.startswith(("10.", "138.238.", "66."))
 
 def increase_ip(ip, dif, increments=1):
     # Increment IP Address by dif
@@ -162,23 +161,23 @@ if __name__ == '__main__':
     nodes = db.IP_Nodes
 
     # Define the number of threads you want to create
-    num_threads = range(100)
+    num_threads = range(1600)
 
     # Create and start the threads
     first_destination = destination
 
-    max_threads = 20  # Adjust as needed
+    max_threads = 40  # Adjust as needed
     with ThreadPoolExecutor(max_threads) as executor:
         # Create a list to hold the thread objects
         threads = []
 
         for i in tqdm(num_threads, desc="Initializing threads", unit="thread", bar_format="{l_bar}\033[32m{bar}\033[0m|{n_fmt}/{total}"):
 
-            thread = executor.submit(multi_traceroute, first_destination, 13, 5242, nodes)
+            thread = executor.submit(multi_traceroute, first_destination, 13, 328, nodes)
             threads.append(thread)
             # print(f"Starting thread from: {first_destination}")
 
-        first_destination = increase_ip(ip=first_destination, dif=8, increments=5242)
+        first_destination = increase_ip(ip=first_destination, dif=8, increments=328)
 
         # Wait for all threads to complete
         for thread in threads:
