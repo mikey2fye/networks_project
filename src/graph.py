@@ -28,5 +28,5 @@ scale_factor = 50.0  # Adjust this value as needed
 pos = {node: (x * scale_factor, y * scale_factor) for node, (x, y) in pos.items()}
 
 nx.draw(G, pos, with_labels=True)
-plt.show()
-# plt.savefig('sample_plot.png')
+# plt.show()
+plt.savefig('Topology.png')
