@@ -1,9 +1,9 @@
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-from traceroute import mongo_client
+import mongo
 
-client = mongo_client()
+client = mongo.mongo_client()
 db = client.IP_Database
 nodes = db.IP_Nodes.find()
 
@@ -21,6 +21,12 @@ for node in nodes:
 
 client.close()
 
-pos = nx.spring_layout(G, scale=40, k=400)
+pos = nx.kamada_kawai_layout(G, scale=10)
+
+# Increase the overall spacing by scaling the positions
+scale_factor = 50.0  # Adjust this value as needed
+pos = {node: (x * scale_factor, y * scale_factor) for node, (x, y) in pos.items()}
+
 nx.draw(G, pos, with_labels=True)
-plt.savefig('sample_plot.png')
+plt.show()
+# plt.savefig('sample_plot.png')
